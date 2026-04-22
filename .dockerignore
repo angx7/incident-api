@@ -6,3 +6,5 @@ dist
 compose.yaml
 Dockerfile
 README.md
+.gitignore
+.github
