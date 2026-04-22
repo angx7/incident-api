@@ -6,6 +6,9 @@ import { generateIncidentEmailTemplate } from './templates/incident.template';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IncidentCDto } from 'src/core/models/incident.model';
+import { CacheService } from 'src/cache/cache.service';
+
+const CACHE_KEY_ALL_INCIDENTS = 'incidents:all';
 
 @Injectable()
 export class IncidentsService {
@@ -13,6 +16,7 @@ export class IncidentsService {
     @InjectRepository(Incident)
     private readonly incidentrepository: Repository<Incident>,
     private readonly emailService: EmailService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async findAll(): Promise<Incident[]> {
@@ -20,10 +24,20 @@ export class IncidentsService {
       console.log(
         '[IncidentService] Ejecutando query de todos los incidentes...',
       );
+
+      const incidentsObject = await this.cacheService.get<Incident[]>(
+        CACHE_KEY_ALL_INCIDENTS,
+      );
+
+      if (incidentsObject && incidentsObject.length > 0) {
+        return incidentsObject;
+      }
+
       const result = await this.incidentrepository.find();
       console.log(
         `[IncidentService] Se encontraron ${result.length} incidentes `,
       );
+      await this.cacheService.set(CACHE_KEY_ALL_INCIDENTS, result);
       return result;
     } catch (error) {
       console.error('[IncidentService] Error al obtener incidentes:');
@@ -70,6 +84,7 @@ export class IncidentsService {
       },
     });
     const generatedIncident = await this.incidentrepository.save(newIncident);
+    await this.cacheService.del(CACHE_KEY_ALL_INCIDENTS);
     const template = generateIncidentEmailTemplate(incident);
     const options: EmailOptions = {
       to: 'angelmirocu602@gmail.com',

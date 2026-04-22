@@ -6,12 +6,14 @@ import { IncidentsModule } from './incidents/incidents.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { envs } from './config/envs';
 import { dataSourceOptions } from './core/db/migrations/data-source';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
     EmailModule,
     IncidentsModule,
     TypeOrmModule.forRoot(dataSourceOptions),
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],
